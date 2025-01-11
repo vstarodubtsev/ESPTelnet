@@ -12,6 +12,7 @@ ESPTelnetBase::ESPTelnetBase() {
 
 bool ESPTelnetBase::begin(uint16_t port /* = 23 */, bool checkConnection /* = true */) {
   ip = "";
+  clientPort = 0;
   if (checkConnection) {
     // connected to WiFi or is ESP in AP mode?
     if (WiFi.status() != WL_CONNECTED && !_isIPSet(WiFi.softAPIP())) return false;
@@ -48,16 +49,17 @@ void ESPTelnetBase::processClientConnection() {
 
 void ESPTelnetBase::handleExistingConnection(TCPClient &newClient) {
   String attemptedIp = newClient.remoteIP().toString();
+  uint16_t attemptedPort = newClient.remotePort();
 
   if (!isConnected()) {
     disconnectClient();
     return;
   }
 
-  if (attemptedIp == ip) {
+  if (attemptedIp == ip && attemptedPort == clientPort) {
     handleReconnection(newClient, attemptedIp);
   } else {
-    notifyConnectionAttempt(attemptedIp);
+    notifyConnectionAttempt(attemptedIp + ":" + clientPort);
   }
 }
 
@@ -177,6 +179,7 @@ size_t ESPTelnetBase::write(const uint8_t* data, size_t size) {
 void ESPTelnetBase::connectClient(WiFiClient c, bool triggerEvent) {
   client = c;
   ip = client.remoteIP().toString();
+  clientPort = client.remotePort();
   client.setNoDelay(true);
   client.setTimeout(this->getKeepAliveInterval());
   if (triggerEvent && on_connect != NULL) on_connect(ip);
@@ -191,6 +194,7 @@ void ESPTelnetBase::disconnectClient(bool triggerEvent) {
   client.stop();
   if (triggerEvent && on_disconnect != NULL) on_disconnect(ip);
   ip = "";
+  clientPort = 0;
   connected = false;
 }
 

@@ -66,6 +66,7 @@ class ESPTelnetBase {
  protected:
   TCPServer server = TCPServer(23);  // must be initalized here
   TCPClient client;
+  uint16_t clientPort = 0;
   bool connected = false;  // needed because I cannot do "client = NULL"
   String ip = "";
   String attemptIp;
